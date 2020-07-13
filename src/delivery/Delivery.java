@@ -1,6 +1,7 @@
 package delivery;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -69,7 +70,7 @@ public class Delivery {
 		
 		for(Restaurant restaurant : restaurants.values()) {
 			if(restaurant.getCategory().contains(category)) {
-				restaurantsForCategory.add(category);
+				restaurantsForCategory.add(restaurant.getName());
 			}
 		}
 		
@@ -142,7 +143,7 @@ public class Delivery {
 		
 		for(Dish dish : dishes.values()) {
 			if(dish.getRestaurantName().equals(restaurantName)) {
-				dishesForRestaurant.add(dish.getRestaurantName());				
+				dishesForRestaurant.add(dish.getName());				
 			}
 		}
 		
@@ -164,7 +165,7 @@ public class Delivery {
 		
 		for(Dish dish : dishes.values()) {
 			for(Restaurant restaurant : restaurants.values()) {
-				if(restaurant.getCategory().equals(category)) {
+				if(restaurant.getCategory().equals(category) && dish.getRestaurantName().equals(restaurant.getName())) {
 					dishesByCategory.add(dish.getName());
 				}
 			}
@@ -192,7 +193,8 @@ public class Delivery {
 	 * @return order ID
 	 */
 	public int addOrder(String dishNames[], int quantities[], String customerName, String restaurantName, int deliveryTime, int deliveryDistance) {
-		Order order = new Order(dishNames, quantities, restaurantName, restaurantName, deliveryDistance, deliveryDistance);
+		Order order = new Order(dishNames, quantities, customerName, restaurantName, deliveryTime, deliveryDistance);
+		order.setOrderNumber(this.orders.size() + 1);
 		orders.add(order);
 		
 		return order_id++;
@@ -214,7 +216,14 @@ public class Delivery {
 	 * @return list of order IDs
 	 */
 	public List<Integer> scheduleDelivery(int deliveryTime, int maxDistance, int maxOrders) {
-       
+		List<Order> scheduledOrders = this.orders
+				.stream()
+				.filter(order -> !order.isAssigned() && order.getDeliveryTimme() == deliveryTime && order.getDeliveryDistance() <= maxDistance)
+				.limit(maxOrders).collect(Collectors.toList());
+			scheduledOrders.forEach(order -> order.setAssigned(true));
+			List<Integer> scheduledDeliveries = scheduledOrders.stream()
+													.map(order -> order.getOrderNumber())
+													.collect(Collectors.toList());
 		
 		return scheduledDeliveries;
 	}
@@ -224,7 +233,7 @@ public class Delivery {
 	 * @return the unassigned orders count
 	 */
 	public int getPendingOrders() {
-        return -1;
+		return (int)this.orders.stream().filter(order -> !order.isAssigned()).count();
 	}
 	
 	// R4
@@ -263,8 +272,21 @@ public class Delivery {
 			}
 		}
 		
-        return restaurantsByRating.stream()
-        		.collect(Collectors.toList());
+		Map<String, Double> averageRatings =
+        		this.ratings.stream()
+        		.collect(Collectors.groupingBy(rating->rating.getRestaurantName(), Collectors.averagingDouble(rating->rating.getRaitng())));
+        
+        List<String> restaurantsOrderedByRating =   
+        averageRatings
+		.entrySet()
+		.stream()
+		.sorted(Map.Entry.comparingByValue())
+		.collect(Collectors.toList())
+		.stream()
+		.map(entry -> entry.getKey())
+        .collect(Collectors.toList());
+        Collections.reverse(restaurantsOrderedByRating);
+        return restaurantsOrderedByRating;
 	}
 	
 	//R5
@@ -275,8 +297,12 @@ public class Delivery {
 	 * @return map category -> order count
 	 */
 	public Map<String,Long> ordersPerCategory() {
-        return null;
-	}
+		return this.orders.stream()
+				.map(order -> this.restaurants.get(order.getRestaurantName()).getCategory())
+				.collect(Collectors.toList())
+				.stream()
+				.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+		}
 	
 	/**
 	 * retrieves the name of the restaurant that has received the higher average rating.
@@ -284,6 +310,10 @@ public class Delivery {
 	 * @return restaurant name
 	 */
 	public String bestRestaurant() {
-        return null;
-	}
+			List<String> restaurantsByAverageRating = this.restaurantsAverageRating();
+	        if(restaurantsByAverageRating.isEmpty()) {
+	        	return null;
+	        }
+	        return restaurantsByAverageRating.get(0);
+        }
 }

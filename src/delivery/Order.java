@@ -8,7 +8,9 @@ public class Order {
 	private String restaurantName;
 	private int deliveryTimme;
 	private int deliveryDistance;
-	
+	private boolean isAssigned = false;
+	private int orderNumber = 0;
+
 	public Order(String[] dishNames, int[] quantities, String customerName, String restaurantName, int deliveryTimme,
 			int deliveryDistance) {
 		super();
@@ -18,6 +20,14 @@ public class Order {
 		this.restaurantName = restaurantName;
 		this.deliveryTimme = deliveryTimme;
 		this.deliveryDistance = deliveryDistance;
+	}
+
+	public int getOrderNumber() {
+		return orderNumber;
+	}
+
+	public void setOrderNumber(int orderNumber) {
+		this.orderNumber = orderNumber;
 	}
 
 	public String[] getDishNames() {
@@ -66,6 +76,14 @@ public class Order {
 
 	public void setDeliveryDistance(int deliveryDistance) {
 		this.deliveryDistance = deliveryDistance;
+	}
+	
+	public boolean isAssigned() {
+		return isAssigned;
+	}
+
+	public void setAssigned(boolean isAssigned) {
+		this.isAssigned = isAssigned;
 	}
 	
 }
